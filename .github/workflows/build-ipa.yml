@@ -1,0 +1,208 @@
+name: Build iOS IPA
+
+# =============================================================================
+# 云析 YunX iOS —— 云端 macOS 自动打包
+#
+# 为什么需要这个 workflow：
+#   本项目在 Linux 上开发，而 iOS 构建强制要求 macOS + Xcode（苹果的硬限制，
+#   没有绕过办法）。GitHub Actions 提供免费的 macOS runner，正好补上这一环。
+#
+# 产出：**未签名 IPA**（YunX-unsigned.ipa）
+#   - 可直接用于 Sideloadly / AltStore / TrollStore 等自签工具
+#   - 不需要 Apple 开发者账号，也不需要任何证书 / Provisioning Profile
+#   - 免费 Apple ID 无法给 CI 授予签名权限，所以"签名版"必须在你自己 Mac 上打
+#     （用 build-ipa.sh --team-id <你的TEAMID>）
+#
+# 使用方式：
+#   1. 把 YunX-iOS/ 整个目录推到 GitHub 仓库
+#   2. 仓库 Settings → Actions → General → Workflow permissions 选 "Read and write"
+#   3. 手动触发（Actions 页 → Build iOS IPA → Run workflow），或推 tag（v*）自动触发
+#   4. 跑完后在 workflow 的 Artifacts 里下载 YunX-unsigned-ipa 压缩包
+# =============================================================================
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: '构建配置'
+        required: true
+        default: 'Release'
+        type: choice
+        options: [ Release, Debug ]
+
+env:
+  # 关闭 Fastlane/Xcode 的交互式提示，CI 上必须无交互
+  FASTLANE_SKIP_UPDATE_CHECK: '1'
+  # 让 xcodebuild 输出更易读（xcpretty 风格不依赖第三方工具）
+  NSUnbufferedIO: 'YES'
+
+jobs:
+  build:
+    name: Build unsigned IPA
+    # macOS 14 runner：自带 Xcode 15.x，满足工程要求的 iOS 16+ / Swift 5.9
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      # ---------------------------------------------------------------- 环境
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 显示构建环境
+        run: |
+          echo "=== macOS 版本 ==="
+          sw_vers
+          echo "=== Xcode 版本 ==="
+          xcodebuild -version
+          echo "=== 可用 SDK ==="
+          xcodebuild -showsdks | grep -i iphone || true
+          echo "=== 工程结构 ==="
+          find . -maxdepth 2 -name '*.xcodeproj' -o -maxdepth 2 -name '*.swift' | head -20
+
+      - name: 选择 Xcode
+        run: |
+          # 显式选一个最新稳定版，避免 runner 默认版本漂移导致行为变化
+          if [ -d /Applications/Xcode_15.4.app ]; then
+            sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          elif [ -d /Applications/Xcode_15.2.app ]; then
+            sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+          else
+            echo "未找到预设版本，沿用 runner 默认 Xcode"
+          fi
+          xcodebuild -version
+
+      # ------------------------------------------------------------ 预检查
+      - name: 预检查 —— scheme 与工程可解析性
+        run: |
+          set -euo pipefail
+          echo "=== xcodebuild -list ==="
+          xcodebuild -list -project YunX.xcodeproj
+
+          # CI 上最常见的第一类失败：没有 shared scheme。
+          # 工程被 Xcode 打开过并保存时才会生成 shared scheme；纯手写/生成器
+          # 产出的 pbxproj 默认没有，导致 `-scheme YunX` 报 "scheme not found"。
+          if ! xcodebuild -list -project YunX.xcodeproj | grep -q "YunX"; then
+            echo "::error::工程里找不到 YunX scheme，请确认 YunX.xcodeproj/xcshareddata/xcschemes/YunX.xcscheme 已提交"
+            exit 1
+          fi
+          echo "✅ scheme 检查通过"
+
+      - name: 预检查 —— Swift 源码文件数
+        run: |
+          set -euo pipefail
+          COUNT=$(find YunX -name '*.swift' | wc -l | tr -d ' ')
+          echo "Swift 源文件数：$COUNT"
+          if [ "$COUNT" -lt 10 ]; then
+            echo "::error::只找到 $COUNT 个 Swift 文件，工程文件列表可能没包含全部源码"
+            exit 1
+          fi
+          # 交叉核对：pbxproj 里登记的源文件应与磁盘一致，
+          # 否则说明新增文件后忘了重跑 tools/gen_pbxproj.py，会编译到一半报
+          # "cannot find type X in scope"。
+          #
+          # 注意：每个 Swift 文件在 pbxproj 里占两条记录 ——
+          # 一条 PBXBuildFile 定义（`xxx in Sources = {isa = PBXBuildFile ...`）与
+          # 一条 Sources phase 引用。所以匹配 `in Sources` 会得到约 2×COUNT 行，
+          # 必须除以 2 再比较，否则永远误报。
+          REGISTERED=$(grep -c 'in Sources \*/ = {isa = PBXBuildFile' YunX.xcodeproj/project.pbxproj || true)
+          echo "pbxproj 中登记的 PBXBuildFile 条目：$REGISTERED"
+          if [ "$REGISTERED" -ne "$COUNT" ]; then
+            echo "::error::pbxproj 登记 $REGISTERED 个源文件，磁盘上有 $COUNT 个 —— 不一致"
+            echo "修复方式：python3 tools/gen_pbxproj.py . 后把新的 project.pbxproj 提交上来"
+            exit 1
+          fi
+          echo "✅ 源文件登记一致"
+
+      # ---------------------------------------------------------------- 构建
+      - name: 构建（免签名）
+        env:
+          # 注意：push / pull_request 触发时 inputs 为空，表达式里直接写
+          # ${{ inputs.configuration || 'Release' }} 在不同版本上有展开差异，
+          # 这里统一用 env 中转，脚本侧再兜底默认值，最稳。
+          BUILD_CONFIG: ${{ github.event.inputs.configuration }}
+        run: |
+          set -euo pipefail
+          CONFIG="${BUILD_CONFIG:-Release}"
+          echo "构建配置：$CONFIG"
+          # 优先走项目自带的脚本，保证本地与 CI 行为一致；
+          # 脚本里已经处理了 Payload 组装与 zip 打包。
+          chmod +x build-ipa-unsigned.sh
+          ./build-ipa-unsigned.sh --configuration "$CONFIG" 2>&1 | tee build.log
+
+      # ------------------------------------------------------------ 失败归档
+      - name: 上传构建日志（仅失败时）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          retention-days: 7
+
+      # ---------------------------------------------------------------- 产物
+      - name: 检查 IPA 是否生成
+        id: check
+        run: |
+          set -euo pipefail
+          IPA=$(find . -name '*.ipa' -type f | head -1 || true)
+          if [ -z "$IPA" ]; then
+            echo "::error::没有找到 .ipa 产物"
+            ls -la
+            exit 1
+          fi
+          echo "找到 IPA：$IPA"
+          ls -lh "$IPA"
+          # 校验 IPA 结构：必须是 Payload/*.app 的 zip
+          echo "=== IPA 内部结构（前 10 项）==="
+          unzip -l "$IPA" | head -15
+          if ! unzip -l "$IPA" | grep -q "Payload/YunX.app/YunX"; then
+            echo "::error::IPA 结构异常：缺少 Payload/YunX.app/YunX 可执行文件"
+            exit 1
+          fi
+          echo "✅ IPA 结构校验通过"
+          echo "ipa_path=$IPA" >> "$GITHUB_OUTPUT"
+
+      - name: 重命名为不会混淆的文件名
+        run: |
+          set -euo pipefail
+          SRC="${{ steps.check.outputs.ipa_path }}"
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-8)
+          DEST="YunX-unsigned-${SHORT_SHA}.ipa"
+          cp "$SRC" "$DEST"
+          echo "已重命名为 $DEST"
+          ls -lh "$DEST"
+          echo "dest=$DEST" >> "$GITHUB_ENV"
+
+      - name: 上传 IPA 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: YunX-unsigned-ipa
+          path: ${{ env.dest }}
+          retention-days: 30
+          if-no-files-found: error
+
+      # ------------------------------------------------------------ 发布 Release
+      # 推 v* tag 时自动把 IPA 挂到 Release，方便直接下载
+      - name: 发布到 Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.dest }}
+          generate_release_notes: true
+          body: |
+            ## 云析 YunX iOS ${{ github.ref_name }}
+
+            **未签名 IPA**，需用自签工具安装：
+
+            1. 下载 `${{ env.dest }}`
+            2. 用 [Sideloadly](https://sideloadly.io/) 或 [AltStore](https://altstore.io/) 签名安装
+            3. 免费 Apple ID 签名的有效期是 **7 天**，到期需重新签
+
+            > 本应用遵循 AGPL-3.0，二次分发须同样开源。
+            > 仅供个人学习研究，请勿用于下载侵权内容。
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

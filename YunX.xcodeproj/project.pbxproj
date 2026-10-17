@@ -1,0 +1,439 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		32E268A8D2DB510380C3E33D /* YunXApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271377508555ECD1BA31570F /* YunXApp.swift */; };
+		E14C7760CEBAAF966A703DAB /* ChunkDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D450DF39673CB0166B8D4410 /* ChunkDownloader.swift */; };
+		BDE254C69A1BFF8A403DA1ED /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00FA1F4A91175B6FBAF43261 /* DownloadManager.swift */; };
+		0D1BCE068DE6426FD4C400A5 /* ShareModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91E86C6F464CA3DD58A4EA38 /* ShareModels.swift */; };
+		25D996DEAC8EDA35F910B7E7 /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC5DCCA775EAAB24F942B2E /* HTTPClient.swift */; };
+		A9D158861D8CA5EBB7CDC378 /* PlatformDispatchingResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5770D5796FE5014F0D3D7D64 /* PlatformDispatchingResolver.swift */; };
+		10E8BE6247A2FDE7960E4536 /* BaiduResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F95ACBBD442C5380061B00 /* BaiduResolver.swift */; };
+		23EDF9A50C7849834DE89E62 /* C139Resolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935C0C4E9EC1A9DD80F41896 /* C139Resolver.swift */; };
+		443FEE2361817635974F72FF /* GitHubResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 401DC68E31882128F7476B56 /* GitHubResolver.swift */; };
+		2A298572BB81BAAEC7F13B11 /* GuangYaResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F116EA540E95530742A4AF /* GuangYaResolver.swift */; };
+		856504A4DECBA66665F9191F /* LanzouResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7C967F84C955BF6DE0B5BA /* LanzouResolver.swift */; };
+		8C29F2C1755772E33884A4BB /* Pan115Resolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9705388BBBC65E7F55D3766 /* Pan115Resolver.swift */; };
+		6E4312FFB55E1C4EFBD67624 /* Pan123Resolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8493DF08B77E28F353893FD4 /* Pan123Resolver.swift */; };
+		5BC50B548C7C8861823B0388 /* QuarkResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465CD643B5A1514852D5C3CB /* QuarkResolver.swift */; };
+		797C770C7C3012984173B046 /* UCResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5DBC3F2C4822316C8FE966 /* UCResolver.swift */; };
+		FA303A33AEFC159EE645EE0A /* XunleiResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1FDDD870F9267665631486 /* XunleiResolver.swift */; };
+		8AB372E4E7BFFB2D1360A45A /* ShareLinkParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C2508FAB590CD2D0F4B19F4 /* ShareLinkParser.swift */; };
+		F5FFA6F02A202D296E509D0B /* ShareResolving.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E462054835F435E0ADD6433 /* ShareResolving.swift */; };
+		6BE2A602EB44D79C64614990 /* XunleiCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F94CFD584EB12B86FA9A34E /* XunleiCrypto.swift */; };
+		01CA7478BB07F4598E4A8AF4 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E63EAC397B6CD6FB9E46562 /* KeychainStore.swift */; };
+		A2B0D1ABBC70AD9E0CDB7EA6 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A288B2285F69C9516B067DA /* SettingsStore.swift */; };
+		FC071463030719AC95AC41C7 /* TaskStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FD33233B095196FEC735B4D /* TaskStore.swift */; };
+		2FF344D465253F5E44E3DA2F /* Toast.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03E14EB6B388E07D8AC849F /* Toast.swift */; };
+		AF899828485BA4DEBCB1A1AA /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C721B96C3E9DED2191C2F1 /* RootView.swift */; };
+		49AFBBD425D46EC9AA53D77C /* AccountsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A41466AC213FADA5F8B885AC /* AccountsScreen.swift */; };
+		2D2A31BC8461022662570BA0 /* DownloadsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD136EA7B19537133D1CE127 /* DownloadsScreen.swift */; };
+		C9A66BACFEAA23D27A319641 /* ResolveScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FFB75639E78B346B7A3BD5D /* ResolveScreen.swift */; };
+		E2CD66245440E29D93D11D29 /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FD7A0CEC9ADF6018DB7F48 /* SettingsScreen.swift */; };
+
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		271377508555ECD1BA31570F /* YunXApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YunXApp.swift; sourceTree = "<group>"; };
+		D450DF39673CB0166B8D4410 /* ChunkDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkDownloader.swift; sourceTree = "<group>"; };
+		00FA1F4A91175B6FBAF43261 /* DownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift; sourceTree = "<group>"; };
+		91E86C6F464CA3DD58A4EA38 /* ShareModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareModels.swift; sourceTree = "<group>"; };
+		EDC5DCCA775EAAB24F942B2E /* HTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPClient.swift; sourceTree = "<group>"; };
+		5770D5796FE5014F0D3D7D64 /* PlatformDispatchingResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformDispatchingResolver.swift; sourceTree = "<group>"; };
+		E1F95ACBBD442C5380061B00 /* BaiduResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaiduResolver.swift; sourceTree = "<group>"; };
+		935C0C4E9EC1A9DD80F41896 /* C139Resolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C139Resolver.swift; sourceTree = "<group>"; };
+		401DC68E31882128F7476B56 /* GitHubResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubResolver.swift; sourceTree = "<group>"; };
+		68F116EA540E95530742A4AF /* GuangYaResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuangYaResolver.swift; sourceTree = "<group>"; };
+		AA7C967F84C955BF6DE0B5BA /* LanzouResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanzouResolver.swift; sourceTree = "<group>"; };
+		D9705388BBBC65E7F55D3766 /* Pan115Resolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pan115Resolver.swift; sourceTree = "<group>"; };
+		8493DF08B77E28F353893FD4 /* Pan123Resolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pan123Resolver.swift; sourceTree = "<group>"; };
+		465CD643B5A1514852D5C3CB /* QuarkResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarkResolver.swift; sourceTree = "<group>"; };
+		0B5DBC3F2C4822316C8FE966 /* UCResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UCResolver.swift; sourceTree = "<group>"; };
+		8A1FDDD870F9267665631486 /* XunleiResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XunleiResolver.swift; sourceTree = "<group>"; };
+		8C2508FAB590CD2D0F4B19F4 /* ShareLinkParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareLinkParser.swift; sourceTree = "<group>"; };
+		4E462054835F435E0ADD6433 /* ShareResolving.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareResolving.swift; sourceTree = "<group>"; };
+		3F94CFD584EB12B86FA9A34E /* XunleiCrypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XunleiCrypto.swift; sourceTree = "<group>"; };
+		832D450B526807F69EF41198 /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
+		F8368E08CB145E92892268E7 /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
+		3E63EAC397B6CD6FB9E46562 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		8A288B2285F69C9516B067DA /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		2FD33233B095196FEC735B4D /* TaskStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskStore.swift; sourceTree = "<group>"; };
+		A03E14EB6B388E07D8AC849F /* Toast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Toast.swift; sourceTree = "<group>"; };
+		57C721B96C3E9DED2191C2F1 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		A41466AC213FADA5F8B885AC /* AccountsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountsScreen.swift; sourceTree = "<group>"; };
+		BD136EA7B19537133D1CE127 /* DownloadsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsScreen.swift; sourceTree = "<group>"; };
+		5FFB75639E78B346B7A3BD5D /* ResolveScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolveScreen.swift; sourceTree = "<group>"; };
+		35FD7A0CEC9ADF6018DB7F48 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
+		84337AD8D27FCD69AF2C4FC2 /* YunX.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YunX.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		424153ED3CD079DB4DB459AF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2B731CEFC6751AAE0EC69B98 /* YunX */ = {isa = PBXGroup; children = (
+			934BFD48B860E157B9D7109F /* YunX */,
+			0A2C978E52A76F0AA9F68BB5 /* Products */,
+		); sourceTree = "<group>"; };
+		8452D61150ABA806CBA1281D /* Download */ = {
+			isa = PBXGroup;
+			children = (
+				D450DF39673CB0166B8D4410 /* ChunkDownloader.swift */,
+				00FA1F4A91175B6FBAF43261 /* DownloadManager.swift */,
+			);
+			path = Download;
+			sourceTree = "<group>";
+		};
+		079AA0228BE9EE11BD1F26A0 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				271377508555ECD1BA31570F /* YunXApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		714872F4B5E8C62604879787 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				91E86C6F464CA3DD58A4EA38 /* ShareModels.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		4F6750EA70BBEFFBD9B32EDE /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				57C721B96C3E9DED2191C2F1 /* RootView.swift */,
+				5B033FFC4D3223358C5BE081 /* Screens */,
+				C47E660397B47DCC1ABD38B4 /* Components */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		0CC7D095D100D15DC1B5C4FF /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				3E63EAC397B6CD6FB9E46562 /* KeychainStore.swift */,
+				8A288B2285F69C9516B067DA /* SettingsStore.swift */,
+				2FD33233B095196FEC735B4D /* TaskStore.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		5EDFB0B6F1FB07282FE068D3 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				EDC5DCCA775EAAB24F942B2E /* HTTPClient.swift */,
+				5770D5796FE5014F0D3D7D64 /* PlatformDispatchingResolver.swift */,
+				8C2508FAB590CD2D0F4B19F4 /* ShareLinkParser.swift */,
+				4E462054835F435E0ADD6433 /* ShareResolving.swift */,
+				3F94CFD584EB12B86FA9A34E /* XunleiCrypto.swift */,
+				2389E0ADDC46AFBD5A40557B /* Platforms */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		A50052C7431F3858584159A1 /* Assets.xcassets */ = {
+			isa = PBXGroup;
+			children = (
+				F8368E08CB145E92892268E7 /* Contents.json */,
+				BCA47EA6FF3E2691EE9A9B31 /* AppIcon.appiconset */,
+			);
+			path = Assets.xcassets;
+			sourceTree = "<group>";
+		};
+		2389E0ADDC46AFBD5A40557B /* Platforms */ = {
+			isa = PBXGroup;
+			children = (
+				E1F95ACBBD442C5380061B00 /* BaiduResolver.swift */,
+				935C0C4E9EC1A9DD80F41896 /* C139Resolver.swift */,
+				401DC68E31882128F7476B56 /* GitHubResolver.swift */,
+				68F116EA540E95530742A4AF /* GuangYaResolver.swift */,
+				AA7C967F84C955BF6DE0B5BA /* LanzouResolver.swift */,
+				D9705388BBBC65E7F55D3766 /* Pan115Resolver.swift */,
+				8493DF08B77E28F353893FD4 /* Pan123Resolver.swift */,
+				465CD643B5A1514852D5C3CB /* QuarkResolver.swift */,
+				0B5DBC3F2C4822316C8FE966 /* UCResolver.swift */,
+				8A1FDDD870F9267665631486 /* XunleiResolver.swift */,
+			);
+			path = Platforms;
+			sourceTree = "<group>";
+		};
+		5B033FFC4D3223358C5BE081 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				A41466AC213FADA5F8B885AC /* AccountsScreen.swift */,
+				BD136EA7B19537133D1CE127 /* DownloadsScreen.swift */,
+				5FFB75639E78B346B7A3BD5D /* ResolveScreen.swift */,
+				35FD7A0CEC9ADF6018DB7F48 /* SettingsScreen.swift */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
+		C47E660397B47DCC1ABD38B4 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A03E14EB6B388E07D8AC849F /* Toast.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		BCA47EA6FF3E2691EE9A9B31 /* AppIcon.appiconset */ = {
+			isa = PBXGroup;
+			children = (
+				832D450B526807F69EF41198 /* Contents.json */,
+			);
+			path = AppIcon.appiconset;
+			sourceTree = "<group>";
+		};
+		934BFD48B860E157B9D7109F /* YunX */ = {
+			isa = PBXGroup;
+			children = (
+				8452D61150ABA806CBA1281D /* Download */,
+				079AA0228BE9EE11BD1F26A0 /* App */,
+				714872F4B5E8C62604879787 /* Model */,
+				4F6750EA70BBEFFBD9B32EDE /* UI */,
+				0CC7D095D100D15DC1B5C4FF /* Storage */,
+				5EDFB0B6F1FB07282FE068D3 /* Network */,
+			);
+			path = YunX;
+			sourceTree = "<group>";
+		};
+
+		0A2C978E52A76F0AA9F68BB5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				84337AD8D27FCD69AF2C4FC2 /* YunX.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E3435DDA2687639586BF0B70 /* YunX */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F2F62AAE534BA46EC59716F3 /* Build configuration list for PBXNativeTarget "YunX" */;
+			buildPhases = (
+				7A70D71C385290AF96BF1031 /* Sources */,
+				424153ED3CD079DB4DB459AF /* Frameworks */,
+				285BB1C1430063331E9F5DD0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = YunX;
+			productName = YunX;
+			productReference = 84337AD8D27FCD69AF2C4FC2 /* YunX.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					E3435DDA2687639586BF0B70 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 7EF2517A8FE63F4681EC5EEA /* Build configuration list for PBXProject "YunX" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = "zh-Hans";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				"zh-Hans",
+				Base,
+			);
+			mainGroup = 2B731CEFC6751AAE0EC69B98;
+			productRefGroup = 0A2C978E52A76F0AA9F68BB5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E3435DDA2687639586BF0B70 /* YunX */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		285BB1C1430063331E9F5DD0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7A70D71C385290AF96BF1031 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				32E268A8D2DB510380C3E33D /* YunXApp.swift in Sources */,
+				E14C7760CEBAAF966A703DAB /* ChunkDownloader.swift in Sources */,
+				BDE254C69A1BFF8A403DA1ED /* DownloadManager.swift in Sources */,
+				0D1BCE068DE6426FD4C400A5 /* ShareModels.swift in Sources */,
+				25D996DEAC8EDA35F910B7E7 /* HTTPClient.swift in Sources */,
+				A9D158861D8CA5EBB7CDC378 /* PlatformDispatchingResolver.swift in Sources */,
+				10E8BE6247A2FDE7960E4536 /* BaiduResolver.swift in Sources */,
+				23EDF9A50C7849834DE89E62 /* C139Resolver.swift in Sources */,
+				443FEE2361817635974F72FF /* GitHubResolver.swift in Sources */,
+				2A298572BB81BAAEC7F13B11 /* GuangYaResolver.swift in Sources */,
+				856504A4DECBA66665F9191F /* LanzouResolver.swift in Sources */,
+				8C29F2C1755772E33884A4BB /* Pan115Resolver.swift in Sources */,
+				6E4312FFB55E1C4EFBD67624 /* Pan123Resolver.swift in Sources */,
+				5BC50B548C7C8861823B0388 /* QuarkResolver.swift in Sources */,
+				797C770C7C3012984173B046 /* UCResolver.swift in Sources */,
+				FA303A33AEFC159EE645EE0A /* XunleiResolver.swift in Sources */,
+				8AB372E4E7BFFB2D1360A45A /* ShareLinkParser.swift in Sources */,
+				F5FFA6F02A202D296E509D0B /* ShareResolving.swift in Sources */,
+				6BE2A602EB44D79C64614990 /* XunleiCrypto.swift in Sources */,
+				01CA7478BB07F4598E4A8AF4 /* KeychainStore.swift in Sources */,
+				A2B0D1ABBC70AD9E0CDB7EA6 /* SettingsStore.swift in Sources */,
+				FC071463030719AC95AC41C7 /* TaskStore.swift in Sources */,
+				2FF344D465253F5E44E3DA2F /* Toast.swift in Sources */,
+				AF899828485BA4DEBCB1A1AA /* RootView.swift in Sources */,
+				49AFBBD425D46EC9AA53D77C /* AccountsScreen.swift in Sources */,
+				2D2A31BC8461022662570BA0 /* DownloadsScreen.swift in Sources */,
+				C9A66BACFEAA23D27A319641 /* ResolveScreen.swift in Sources */,
+				E2CD66245440E29D93D11D29 /* SettingsScreen.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		C19BB360D63F1BA9F02BAB59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		88A29AB70C762FCDF6D9A1D3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		331C5106741EE8E14B752D88 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = YunX/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yunx.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		256639833029BCA847F093AE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = YunX/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yunx.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7EF2517A8FE63F4681EC5EEA /* Build configuration list for PBXProject "YunX" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C19BB360D63F1BA9F02BAB59 /* Debug */,
+				88A29AB70C762FCDF6D9A1D3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F2F62AAE534BA46EC59716F3 /* Build configuration list for PBXNativeTarget "YunX" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				331C5106741EE8E14B752D88 /* Debug */,
+				256639833029BCA847F093AE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+}

@@ -1,0 +1,19 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# 打包产物
+*.ipa
+*.dSYM
+Payload/
+ExportOptions.plist
+
+# macOS
+.DS_Store
+
+# 本地临时
+*.yunx.meta

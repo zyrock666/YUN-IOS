@@ -150,7 +150,8 @@ final class GuangYaResolver: ShareResolving, DownloadHeadersProviding, @unchecke
     }
 
     /// 与其它平台构造器形态对齐的别名（内部仍按 token 处理）。
-    init(cookie: String) {
+    /// 必须标 `convenience`：designated initializer 不能委托给 `self.init`。
+    convenience init(cookie: String) {
         self.init(accessToken: cookie)
     }
 

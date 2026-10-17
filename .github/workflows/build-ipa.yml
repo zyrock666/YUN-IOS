@@ -44,7 +44,10 @@ env:
 jobs:
   build:
     name: Build unsigned IPA
-    # macOS 14 runner：自带 Xcode 15.x，满足工程要求的 iOS 16+ / Swift 5.9
+    # macOS 14 runner：自带 Xcode 15.4，满足工程要求的 iOS 16+ / Swift 5.9。
+    # 用 macos-14 而不是 macos-latest：latest 会漂移到更新版本，
+    # 未来 Xcode 16/17 可能对 Swift 6 严格并发检查更严，导致今天能过的代码明天报错。
+    # 需要更新时显式改版本号，而不是被动跟随。
     runs-on: macos-14
     timeout-minutes: 30
 
@@ -79,22 +82,35 @@ jobs:
       # ------------------------------------------------------------ 预检查
       - name: 预检查 —— scheme 与工程可解析性
         run: |
-          set -euo pipefail
-          echo "=== xcodebuild -list ==="
-          xcodebuild -list -project YunX.xcodeproj
-
-          # CI 上最常见的第一类失败：没有 shared scheme。
-          # 工程被 Xcode 打开过并保存时才会生成 shared scheme；纯手写/生成器
-          # 产出的 pbxproj 默认没有，导致 `-scheme YunX` 报 "scheme not found"。
-          if ! xcodebuild -list -project YunX.xcodeproj | grep -q "YunX"; then
-            echo "::error::工程里找不到 YunX scheme，请确认 YunX.xcodeproj/xcshareddata/xcschemes/YunX.xcscheme 已提交"
+          set -uo pipefail
+          echo "=== 工程文件检查 ==="
+          ls -la YunX.xcodeproj/
+          echo
+          echo "=== shared scheme 检查 ==="
+          SCHEME_FILE="YunX.xcodeproj/xcshareddata/xcschemes/YunX.xcscheme"
+          if [ ! -f "$SCHEME_FILE" ]; then
+            echo "::error::缺少 shared scheme：$SCHEME_FILE 不存在"
+            echo "本地执行 python3 tools/gen_pbxproj.py . 后提交，或手动补该文件"
             exit 1
           fi
-          echo "✅ scheme 检查通过"
+          echo "✔ scheme 文件存在"
+          echo
+          echo "=== xcodebuild -list ==="
+          # 注意不要用 set -e 包住 xcodebuild -list：
+          # 它对某些 pbxproj 会因非致命警告返回非 0，但那不代表不能用。
+          LIST_OUT=$(xcodebuild -list -project YunX.xcodeproj 2>&1) || true
+          echo "$LIST_OUT"
+          echo
+          if echo "$LIST_OUT" | grep -q "YunX"; then
+            echo "✅ scheme 检查通过"
+          else
+            echo "::error::xcodebuild -list 里没看到 YunX scheme"
+            exit 1
+          fi
 
       - name: 预检查 —— Swift 源码文件数
         run: |
-          set -euo pipefail
+          set -uo pipefail
           COUNT=$(find YunX -name '*.swift' | wc -l | tr -d ' ')
           echo "Swift 源文件数：$COUNT"
           if [ "$COUNT" -lt 10 ]; then

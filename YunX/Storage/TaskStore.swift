@@ -24,6 +24,10 @@ struct TaskStore: Sendable {
         var createdAt: Date
         var errorMessage: String?
 
+        /// `DownloadTask` 是 `@MainActor` 隔离的，读它的属性必须在主 actor 上，
+        /// 所以这个转换器也要标 `@MainActor`（否则报
+        /// 「main actor-isolated property 'fileName' can not be referenced from a non-isolated context」）。
+        @MainActor
         init(from task: DownloadTask) {
             self.id = task.id
             self.fileName = task.fileName

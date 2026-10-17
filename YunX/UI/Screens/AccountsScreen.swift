@@ -12,6 +12,9 @@
 //
 
 import SwiftUI
+// UIPasteboard 来自 UIKit —— SwiftUI 没有等价的剪贴板 API。
+// 这是本文件唯一用到 UIKit 的地方（「从剪贴板粘贴」按钮）。
+import UIKit
 
 struct AccountsScreen: View {
 

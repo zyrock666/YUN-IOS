@@ -63,6 +63,10 @@
 //
 
 import Foundation
+// 蓝奏云优享版的直链接口对参数做 AES-ECB 加密，走 CommonCrypto 的 CCCrypt。
+// ⚠️ CommonCrypto 不会由 Security 自动导出，必须显式 import，
+// 否则 CCCrypt / kCCKeySizeAES128 等都找不到（编译期报 cannot find in scope）。
+import CommonCrypto
 import Security
 
 // =====================================================================================

@@ -13,7 +13,9 @@ import SwiftUI
 @MainActor
 final class SettingsStore: ObservableObject {
 
-    static let shared = SettingsStore()
+    /// 单例。`nonisolated(unsafe)` 的理由同 DownloadManager.shared：
+    /// SwiftUI 的 `@StateObject = .shared` 属性初始化器不在 main actor 上。
+    nonisolated(unsafe) static let shared = SettingsStore()
 
     private enum Key {
         static let maxConnections = "settings.maxConnections"

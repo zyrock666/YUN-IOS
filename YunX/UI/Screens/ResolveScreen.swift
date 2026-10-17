@@ -394,8 +394,13 @@ struct ResolveScreen: View {
                     share: share,
                     stoken: token.stoken
                 )
-                let headers = downloadHeaders(for: link, platform: share.platform)
-                let task = DownloadManager.shared.enqueue(link, headers: headers)
+                let headers = Self.downloadHeaders(
+                    for: link,
+                    platform: share.platform,
+                    resolver: resolver
+                )
+                // enqueue 在 @MainActor 类上，跨 actor 调用必须 await
+                let task = await DownloadManager.shared.enqueue(link, headers: headers)
                 toastMessage = "已加入下载队列：\(task.fileName)"
             } catch {
                 alertMessage = "取直链失败：\(Self.describe(error))"
@@ -413,7 +418,13 @@ struct ResolveScreen: View {
     /// 缺 Referer 会直接 403。登录态还要带账号 Cookie，游客态带 `__pugs`。
     /// 这些规则属于各平台协议细节，所以交给解析器自己给（`DownloadHeadersProviding`），
     /// 界面层不重复实现一遍 —— 否则平台一改就要改两处。
-    private func downloadHeaders(for link: DownloadLink, platform: SharePlatform) -> [String: String] {
+    /// 改成 `static` 是为了能被 `DirectoryScreen` 复用 ——
+    /// 后者是独立的结构体，拿不到 `ResolveScreen` 的实例方法。
+    private static func downloadHeaders(
+        for link: DownloadLink,
+        platform: SharePlatform,
+        resolver: ShareResolving
+    ) -> [String: String] {
         if let dispatcher = resolver as? PlatformDispatchingResolver {
             return dispatcher.downloadHeaders(for: link, platform: platform)
         }
@@ -691,8 +702,14 @@ private struct DirectoryScreen: View {
                     share: share,
                     stoken: stoken
                 )
-                let headers = downloadHeaders(for: link, platform: share.platform)
-                let task = DownloadManager.shared.enqueue(link, headers: headers)
+                // 注意用 `ResolveScreen.` 而不是 `Self.`：这里在 DirectoryScreen 内部
+                let headers = ResolveScreen.downloadHeaders(
+                    for: link,
+                    platform: share.platform,
+                    resolver: resolver
+                )
+                // enqueue 在 @MainActor 类上，跨 actor 调用必须 await
+                let task = await DownloadManager.shared.enqueue(link, headers: headers)
                 onEnqueued("已加入下载队列：\(task.fileName)")
             } catch {
                 onError("取直链失败：\(ResolveScreen.describe(error))")

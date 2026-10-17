@@ -116,7 +116,14 @@ final class DownloadTask: ObservableObject, Identifiable {
 @MainActor
 final class DownloadManager: ObservableObject {
 
-    static let shared = DownloadManager()
+    /// 单例。
+    ///
+    /// `nonisolated(unsafe)` 是必需的：`@StateObject private var x = DownloadManager.shared`
+    /// 这种 SwiftUI 惯用写法，求值发生在视图的 nonisolated 属性初始化器里，
+    /// 直接引用 `@MainActor` 类的 static 成员会报
+    /// 「main actor-isolated static property 'shared' can not be referenced from a non-isolated context」。
+    /// 这里只是把「拿到引用」解耦，对象内部的可变状态仍然全部由 @MainActor 保护。
+    nonisolated(unsafe) static let shared = DownloadManager()
 
     @Published private(set) var tasks: [DownloadTask] = []
 
@@ -272,12 +279,19 @@ final class DownloadManager: ObservableObject {
             speedLimit: speedLimit,
             client: client
         ) { [weak task] downloaded, total, speed in
-            // 回调来自后台线程，切回主线程更新 @Published
+            // 回调来自后台线程，切回主线程更新 @Published。
+            //
+            // 注意这里**不**在闭包里写 `guard let task else { return }`：
+            // Swift 5.10 会认为 `[weak task]` 捕获的是 var，`guard let` 在
+            // 并发执行的代码里重新绑定它会报
+            // 「reference to captured var 'task' in concurrently-executing code」。
+            // 改为先取出强引用常量再进 Task。
+            let strongTask = task
+            guard let strongTask else { return }
             Task { @MainActor in
-                guard let task else { return }
-                task.downloadedBytes = downloaded
-                if total > 0 { task.totalBytes = total }
-                task.speedBytesPerSec = speed
+                strongTask.downloadedBytes = downloaded
+                if total > 0 { strongTask.totalBytes = total }
+                strongTask.speedBytesPerSec = speed
             }
         }
         task.engine = engine
@@ -289,7 +303,8 @@ final class DownloadManager: ObservableObject {
         // 方法（persist/scheduleNext）会报「main actor-isolated method in a
         // nonisolated context」。`@MainActor` 标注的 Task 闭包天然在主 actor 上跑。
         task.runTask = Task { [weak self, weak task] in
-            guard let task else { return }
+            // 同上的并发捕获限制：先固定强引用，避免在 Task 闭包里重绑定 weak var
+            guard let task = task else { return }
             var failure: String?
             var wasCancelled = false
             do {

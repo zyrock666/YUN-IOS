@@ -150,6 +150,29 @@ jobs:
           chmod +x build-ipa-unsigned.sh
           ./build-ipa-unsigned.sh --configuration "$CONFIG" 2>&1 | tee build.log
 
+      # ------------------------------------------------- 编译错误摘要（失败时）
+      # xcodebuild 的输出有上万行，真正的 error 只有几行，混在 SwiftDriver 的
+      # 长命令里很难找。这一步把 error 单独提取到一步，直接显示在 GitHub UI 上。
+      - name: 提取编译错误摘要
+        if: failure()
+        run: |
+          echo "=========================================="
+          echo "           编译错误汇总"
+          echo "=========================================="
+          if [ -f build.log ]; then
+            echo
+            echo "--- error 行 ---"
+            grep -E ": error: " build.log | sed 's|/Users/runner/work/YUN-IOS/YUN-IOS/||' | sort -u || echo "(无 error 行)"
+            echo
+            echo "--- warning 计数 ---"
+            echo "warning: $(grep -c ': warning: ' build.log || echo 0) 条"
+            echo
+            echo "--- 失败的 target ---"
+            grep -E "The following build commands failed|BUILD FAILED" -A3 build.log || true
+          else
+            echo "build.log 不存在"
+          fi
+
       # ------------------------------------------------------------ 失败归档
       - name: 上传构建日志（仅失败时）
         if: failure()

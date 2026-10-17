@@ -401,7 +401,9 @@ struct ResolveScreen: View {
                 )
                 // enqueue 在 @MainActor 类上，跨 actor 调用必须 await
                 let task = await DownloadManager.shared.enqueue(link, headers: headers)
-                toastMessage = "已加入下载队列：\(task.fileName)"
+                // task.fileName 也是 @MainActor 隔离的属性，读取同样要 await
+                let name = await task.fileName
+                toastMessage = "已加入下载队列：\(name)"
             } catch {
                 alertMessage = "取直链失败：\(Self.describe(error))"
             }
@@ -420,7 +422,9 @@ struct ResolveScreen: View {
     /// 界面层不重复实现一遍 —— 否则平台一改就要改两处。
     /// 改成 `static` 是为了能被 `DirectoryScreen` 复用 ——
     /// 后者是独立的结构体，拿不到 `ResolveScreen` 的实例方法。
-    private static func downloadHeaders(
+    /// 注意是 `static` + **非 private**：`DirectoryScreen` 是同文件里的独立结构体，
+    /// private 会报「'downloadHeaders' is inaccessible due to 'private' protection level」。
+    static func downloadHeaders(
         for link: DownloadLink,
         platform: SharePlatform,
         resolver: ShareResolving

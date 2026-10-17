@@ -15,6 +15,7 @@ final class SettingsStore: ObservableObject {
 
     /// 单例。`nonisolated(unsafe)` 的理由同 DownloadManager.shared：
     /// SwiftUI 的 `@StateObject = .shared` 属性初始化器不在 main actor 上。
+    /// 与之配套，`init()` 也必须 `nonisolated`。
     nonisolated(unsafe) static let shared = SettingsStore()
 
     private enum Key {
@@ -53,7 +54,15 @@ final class SettingsStore: ObservableObject {
 
     private let defaults = UserDefaults.standard
 
-    private init() {
+    /// `nonisolated` 是必需的：`nonisolated(unsafe) static let shared` 要调用它，
+    /// 否则报「call to main actor-isolated initializer 'init()' in a synchronous
+    /// nonisolated(unsafe) context」。
+    ///
+    /// 安全性：这里只读 `UserDefaults`（线程安全）给 `@Published` 赋初值，
+    /// 不触发 `didSet`（Swift 保证 init 内不调用 didSet），因此不会去碰
+    /// `DownloadManager.shared`，没有跨 actor 副作用。
+    nonisolated private init() {
+        let defaults = UserDefaults.standard
         let conn = defaults.object(forKey: Key.maxConnections) as? Int
         let limit = defaults.object(forKey: Key.speedLimitKBps) as? Int
         let mode = defaults.object(forKey: Key.darkMode) as? Int

@@ -29,6 +29,10 @@ struct YunXApp: App {
         // 把设置单向推送进下载管理器（唯一真相在 SettingsStore）
         downloads.maxConnections = store.maxConnections
         downloads.globalSpeedLimitKBps = store.speedLimitKBps
+        // 恢复上次未完成的任务。
+        // 从 DownloadManager.init() 挪到这里：init 必须是 nonisolated 的
+        // （@StateObject = .shared 的要求），而恢复任务要碰 @MainActor 的 DownloadTask。
+        downloads.bootstrap()
     }
 
     var body: some Scene {

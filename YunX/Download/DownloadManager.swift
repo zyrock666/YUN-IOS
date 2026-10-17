@@ -118,11 +118,16 @@ final class DownloadManager: ObservableObject {
 
     /// 单例。
     ///
-    /// `nonisolated(unsafe)` 是必需的：`@StateObject private var x = DownloadManager.shared`
-    /// 这种 SwiftUI 惯用写法，求值发生在视图的 nonisolated 属性初始化器里，
-    /// 直接引用 `@MainActor` 类的 static 成员会报
-    /// 「main actor-isolated static property 'shared' can not be referenced from a non-isolated context」。
-    /// 这里只是把「拿到引用」解耦，对象内部的可变状态仍然全部由 @MainActor 保护。
+    /// 为什么 `shared` 和 `init()` 都要 `nonisolated`：
+    /// SwiftUI 的 `@StateObject private var x = DownloadManager.shared` 在**属性初始化器**
+    /// 里求值，那不是 main actor 上下文。若 `shared` 是 `@MainActor` 的 static，
+    /// 会报「main actor-isolated static property 'shared' can not be referenced from a non-isolated context」；
+    /// 而只给 `shared` 加 `nonisolated(unsafe)` 又会让它去调 `@MainActor` 的 `init()`，
+    /// 报「call to main actor-isolated initializer 'init()' in a synchronous nonisolated(unsafe) context」。
+    /// 所以两者必须同时 `nonisolated`。
+    ///
+    /// 安全性：`init()` 里只做纯数据加载（读 JSON 到属性），不碰 UI、不跨线程共享；
+    /// 实例创建完成后，所有可变状态的读写仍由类上的 @MainActor 隔离保护。
     nonisolated(unsafe) static let shared = DownloadManager()
 
     @Published private(set) var tasks: [DownloadTask] = []
@@ -153,8 +158,21 @@ final class DownloadManager: ObservableObject {
     /// 同时进行（running）的任务上限。iOS 后台时间有限，串行队列更稳。
     private let maxConcurrentTasks = 2
 
-    private init() {
-        // 并发/限速的初值由 YunXApp.init 从 SettingsStore 推送，这里只用默认值占位
+    /// `nonisolated` 的理由见 `shared` 的注释：它要被 nonisolated 的 static 属性调用。
+    ///
+    /// 这里**不做任何有隔离要求的工作**（不读文件、不建对象），只让属性默认值生效；
+    /// 真正的任务恢复由 `bootstrap()` 在 App 启动时于主 actor 上执行。
+    nonisolated private init() {}
+
+    // MARK: - 启动
+
+    /// 启动时恢复未完成任务。
+    ///
+    /// 单独抽成方法而不是放在 `init()` 里，是因为 `init` 必须是 `nonisolated`
+    /// （SwiftUI 的 `@StateObject = .shared` 要求），而 `loadPersistedTasks()`
+    /// 要碰 `@MainActor` 的 `DownloadTask`。由 `YunXApp.init` 在主 actor 上调用即可。
+    /// 幂等：重复调用只会重读一次本地 JSON。
+    func bootstrap() {
         loadPersistedTasks()
     }
 
@@ -343,13 +361,29 @@ final class DownloadManager: ObservableObject {
     // MARK: - 持久化
 
     private func persist() {
-        let records = tasks.map { TaskStore.Record(from: $0) }
+        // 同 loadPersistedTasks 的理由：Record.init(from:) 读的是 @MainActor 的
+        // DownloadTask，因此它自身也是 @MainActor；`map` 闭包不是主 actor 上下文，
+        // 必须改成显式循环（本方法已在 @MainActor 上）。
+        var records: [TaskStore.Record] = []
+        records.reserveCapacity(tasks.count)
+        for task in tasks {
+            records.append(TaskStore.Record(from: task))
+        }
         store.save(records)
     }
 
     private func loadPersistedTasks() {
         let records = store.load()
-        tasks = records.map { $0.toTask() }
+        // 不能用 `records.map { $0.toTask() }`：`map` 的闭包不是 @MainActor 上下文，
+        // 而 toTask() 是 @MainActor 方法（它要构造 @MainActor 的 DownloadTask），
+        // 会报「call to main actor-isolated instance method in a synchronous nonisolated context」。
+        // 改成显式循环，本方法本身已在 @MainActor 上，循环体内的调用是合法的。
+        var loaded: [DownloadTask] = []
+        loaded.reserveCapacity(records.count)
+        for record in records {
+            loaded.append(record.toTask())
+        }
+        tasks = loaded
         // 上次退出时正在下载的任务：置为已暂停，让用户手动继续（自动续传会耗流量）
         for task in tasks where task.state == .running {
             task.state = .paused

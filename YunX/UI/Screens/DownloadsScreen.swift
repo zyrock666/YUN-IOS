@@ -102,7 +102,11 @@ struct DownloadsScreen: View {
         }
     }
 
-    /// 针对单条 / 全部的确认文案前缀
+    /// 针对单条 / 全部的确认文案前缀。
+    ///
+    /// 显式标 `@MainActor`：`DownloadTask.fileName` 是 `@MainActor` 隔离属性，
+    /// 而这个计算属性不在 `body` 内，隐式隔离继承不保证在各个 Swift 版本下都成立。
+    @MainActor
     private var cancelHint: String {
         guard let task = pendingDeletion else { return "将删除全部任务。" }
         return "任务：\(task.fileName)\n"

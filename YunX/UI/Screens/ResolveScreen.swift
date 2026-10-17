@@ -714,7 +714,9 @@ private struct DirectoryScreen: View {
                 )
                 // enqueue 在 @MainActor 类上，跨 actor 调用必须 await
                 let task = await DownloadManager.shared.enqueue(link, headers: headers)
-                onEnqueued("已加入下载队列：\(task.fileName)")
+                // task.fileName 同样是 @MainActor 隔离的属性，读取也要 await
+                let name = await task.fileName
+                onEnqueued("已加入下载队列：\(name)")
             } catch {
                 onError("取直链失败：\(ResolveScreen.describe(error))")
             }

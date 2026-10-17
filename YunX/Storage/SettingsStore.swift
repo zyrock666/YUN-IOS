@@ -5,18 +5,32 @@
 //  对应上游 data/prefs/*.kt。上游用 SharedPreferences，iOS 用 UserDefaults。
 //  凭据类（Cookie / 迅雷 accessToken）**不进这里**，走 KeychainStore。
 //
+//  ## 为什么这个类**不**标 @MainActor
+//
+//  最初写成 `@MainActor final class SettingsStore`，结果陷入死结：
+//  - SwiftUI 的 `@StateObject private var s = SettingsStore.shared` 在**属性初始化器**
+//    里求值，那不是 main actor 上下文 → `shared` 必须 `nonisolated(unsafe)`；
+//  - 而 `nonisolated(unsafe) static let shared = SettingsStore()` 又要调 `init()`，
+//    → `init()` 也得 `nonisolated`；
+//  - 但 `nonisolated init()` 里给 `@Published` 属性赋值是**非法**的
+//    （「main actor-isolated property can not be mutated from a non-isolated context」）。
+//
+//  三者无法同时成立。而 `SettingsStore` 只被界面读写（天然在主线程），
+//  没有任何跨线程访问，**根本不需要 actor 隔离**。去掉 `@MainActor` 后
+//  单例、init、@Published 全部回到普通 ObservableObject 语义，问题消失。
+//
+//  唯一的跨 actor 调用是 `didSet` 里把配置推给 `@MainActor` 的 DownloadManager，
+//  那里显式跳一次 main actor（见下）。
+//
 
 import Foundation
 import Combine
 import SwiftUI
 
-@MainActor
 final class SettingsStore: ObservableObject {
 
-    /// 单例。`nonisolated(unsafe)` 的理由同 DownloadManager.shared：
-    /// SwiftUI 的 `@StateObject = .shared` 属性初始化器不在 main actor 上。
-    /// 与之配套，`init()` 也必须 `nonisolated`。
-    nonisolated(unsafe) static let shared = SettingsStore()
+    /// 单例。不需要 `nonisolated(unsafe)` —— 本类没有 actor 隔离。
+    static let shared = SettingsStore()
 
     private enum Key {
         static let maxConnections = "settings.maxConnections"
@@ -27,10 +41,16 @@ final class SettingsStore: ObservableObject {
     }
 
     /// 分片并发数。上限 32 与上游「实验性功能硬上限」一致。
+    ///
+    /// `didSet` 里把值推给 `DownloadManager`（`@MainActor` 类），
+    /// 必须 `Task { @MainActor in ... }` 跳一次线程。
     @Published var maxConnections: Int {
         didSet {
             defaults.set(maxConnections, forKey: Key.maxConnections)
-            DownloadManager.shared.maxConnections = maxConnections
+            let value = maxConnections
+            Task { @MainActor in
+                DownloadManager.shared.maxConnections = value
+            }
         }
     }
 
@@ -38,7 +58,10 @@ final class SettingsStore: ObservableObject {
     @Published var speedLimitKBps: Int {
         didSet {
             defaults.set(speedLimitKBps, forKey: Key.speedLimitKBps)
-            DownloadManager.shared.globalSpeedLimitKBps = speedLimitKBps
+            let value = speedLimitKBps
+            Task { @MainActor in
+                DownloadManager.shared.globalSpeedLimitKBps = value
+            }
         }
     }
 
@@ -54,15 +77,7 @@ final class SettingsStore: ObservableObject {
 
     private let defaults = UserDefaults.standard
 
-    /// `nonisolated` 是必需的：`nonisolated(unsafe) static let shared` 要调用它，
-    /// 否则报「call to main actor-isolated initializer 'init()' in a synchronous
-    /// nonisolated(unsafe) context」。
-    ///
-    /// 安全性：这里只读 `UserDefaults`（线程安全）给 `@Published` 赋初值，
-    /// 不触发 `didSet`（Swift 保证 init 内不调用 didSet），因此不会去碰
-    /// `DownloadManager.shared`，没有跨 actor 副作用。
-    nonisolated private init() {
-        let defaults = UserDefaults.standard
+    private init() {
         let conn = defaults.object(forKey: Key.maxConnections) as? Int
         let limit = defaults.object(forKey: Key.speedLimitKBps) as? Int
         let mode = defaults.object(forKey: Key.darkMode) as? Int

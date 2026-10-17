@@ -241,7 +241,14 @@ fileprivate enum Pan123Support {
     /// 密码学安全随机字节；失败时退化为时间派生伪随机（仅兜底）。
     static func randomBytes(_ count: Int) -> [UInt8] {
         var bytes = [UInt8](repeating: 0, count: count)
-        if SecRandomCopyBytes(kSecRandomDefault, count, &bytes) == errSecSuccess {
+        // 用 withUnsafeMutableBytes 显式取指针，而不是依赖 `&bytes` 的隐式转换：
+        // `SecRandomCopyBytes` 第三参是 `UnsafeMutableRawPointer`，数组的 inout
+        // 隐式转换在不同 Swift 版本下行为不一致，显式写法没有歧义。
+        let ok = bytes.withUnsafeMutableBytes { buf -> Bool in
+            guard let base = buf.baseAddress else { return false }
+            return SecRandomCopyBytes(kSecRandomDefault, count, base) == errSecSuccess
+        }
+        if ok {
             return bytes
         }
         var seed = UInt64(Date().timeIntervalSince1970 * 1_000_000) ^ UInt64(count)

@@ -238,8 +238,12 @@ final class ChunkDownloader: @unchecked Sendable {
             while cursor < min(concurrency, pending.count) {
                 let index = pending[cursor]
                 group.addTask { [weak self] in
-                    guard let self else { return index }
-                    try await self.downloadChunk(at: index)
+                    // 先用局部常量固定 strong 引用再调用：
+                    // 直接 `guard let self` 在 concurrent 闭包里会被判为
+                    // 「reference to captured var 'self'」。
+                    let strong = self
+                    guard let strong else { return index }
+                    try await strong.downloadChunk(at: index)
                     return index
                 }
                 cursor += 1
@@ -251,8 +255,9 @@ final class ChunkDownloader: @unchecked Sendable {
                 if cursor < pending.count {
                     let index = pending[cursor]
                     group.addTask { [weak self] in
-                        guard let self else { return index }
-                        try await self.downloadChunk(at: index)
+                        let strong = self
+                        guard let strong else { return index }
+                        try await strong.downloadChunk(at: index)
                         return index
                     }
                     cursor += 1

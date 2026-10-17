@@ -129,23 +129,34 @@ fileprivate enum C139Crypto {
         var out = Data(count: input.count + kCCBlockSizeAES128)
         let outCapacity = out.count
 
-        // 三个缓冲区各自 withUnsafe… 嵌套，才拿得到有效地址
+        // 尺寸提前取出，避免在 withUnsafeMutableBytes 闭包里读外层变量触发独占访问冲突
+        let keyCount = key.count
+        let inputCount = input.count
+
+        // 四个缓冲区各自 withUnsafe… 嵌套，才拿得到有效地址。
+        //
+        // ⚠️ `iv` 是 [UInt8]，CCCrypt 的 iv 参数要 `UnsafeRawPointer?`，
+        // Swift **不会**把数组隐式转成指针（这点和 C 不一样），必须自己
+        // `withUnsafeBytes` 取 baseAddress，否则报
+        // 「cannot convert value of type '[UInt8]' to expected argument type 'UnsafeRawPointer?'」。
         let status: CCCryptorStatus = key.withUnsafeBytes { keyBytes -> CCCryptorStatus in
             input.withUnsafeBytes { inputBytes -> CCCryptorStatus in
-                out.withUnsafeMutableBytes { outBytes -> CCCryptorStatus in
-                    CCCrypt(
-                        operation,
-                        CCAlgorithm(kCCAlgorithmAES),
-                        CCOptions(kCCOptionPKCS7Padding),
-                        keyBytes.baseAddress,
-                        key.count,
-                        iv,                                  // IV：数组隐式转 UnsafeRawPointer
-                        inputBytes.baseAddress,
-                        input.count,
-                        outBytes.baseAddress,
-                        outCapacity,
-                        &outLength
-                    )
+                iv.withUnsafeBytes { ivBytes -> CCCryptorStatus in
+                    out.withUnsafeMutableBytes { outBytes -> CCCryptorStatus in
+                        CCCrypt(
+                            operation,
+                            CCAlgorithm(kCCAlgorithmAES),
+                            CCOptions(kCCOptionPKCS7Padding),
+                            keyBytes.baseAddress,
+                            keyCount,
+                            ivBytes.baseAddress,
+                            inputBytes.baseAddress,
+                            inputCount,
+                            outBytes.baseAddress,
+                            outCapacity,
+                            &outLength
+                        )
+                    }
                 }
             }
         }
@@ -329,7 +340,14 @@ fileprivate enum C139Crypto {
     /// 密码学安全随机字节；`SecRandomCopyBytes` 失败时退化为时间派生的伪随机（仅兜底）。
     static func randomBytes(_ count: Int) -> [UInt8] {
         var bytes = [UInt8](repeating: 0, count: count)
-        if SecRandomCopyBytes(kSecRandomDefault, count, &bytes) == errSecSuccess {
+        // 用 withUnsafeMutableBytes 显式取指针，而不是依赖 `&bytes` 的隐式转换：
+        // `SecRandomCopyBytes` 第三参是 `UnsafeMutableRawPointer`，数组的 inout
+        // 隐式转换在不同 Swift 版本下行为不一致，显式写法没有歧义。
+        let ok = bytes.withUnsafeMutableBytes { buf -> Bool in
+            guard let base = buf.baseAddress else { return false }
+            return SecRandomCopyBytes(kSecRandomDefault, count, base) == errSecSuccess
+        }
+        if ok {
             return bytes
         }
         var seed = UInt64(Date().timeIntervalSince1970 * 1_000_000) ^ UInt64(count)

@@ -309,47 +309,55 @@ final class DownloadManager: ObservableObject {
         }
         task.engine = engine
 
-        // 引擎在后台跑，完成后回到主 actor 收尾。
+        // 引擎在后台跑，完成后回来收尾。
         //
-        // 注意：这里用 `Task { @MainActor in ... }` 而不是 `await MainActor.run { ... }`。
-        // 后者在 Swift 6 的严格并发下，闭包是非隔离上下文，直接调用 @MainActor
-        // 方法（persist/scheduleNext）会报「main actor-isolated method in a
-        // nonisolated context」。`@MainActor` 标注的 Task 闭包天然在主 actor 上跑。
+        // ⚠️ 这里**不能**用 `await MainActor.run { ... }` 包住收尾逻辑：
+        // 闭包会捕获外层的 `self`（weak var）与 `failure` / `wasCancelled`（var），
+        // 而 `MainActor.run` 的闭包是 concurrent 上下文，Swift 5.10 报
+        //   error: reference to captured var 'self' in concurrently-executing code
+        //   error: reference to captured var 'wasCancelled' in concurrently-executing code
+        //   error: reference to captured var 'failure' in concurrently-executing code
+        //
+        // 因为 DownloadManager 已经不标 @MainActor（见类声明注释），
+        // 这里直接串行执行即可：先把结果算成**不可变常量**，再一次性回写。
         task.runTask = Task { [weak self, weak task] in
-            // 同上的并发捕获限制：先固定强引用，避免在 Task 闭包里重绑定 weak var
             guard let task = task else { return }
-            var failure: String?
-            var wasCancelled = false
+
+            // 用不可变常量承载结果，彻底避开「捕获 var」的问题
+            let outcome: (cancelled: Bool, failure: String?)
             do {
                 try await engine.start()
+                outcome = (false, nil)
             } catch {
                 if case ResolveError.cancelled = error {
-                    wasCancelled = true
+                    outcome = (true, nil)
                 } else {
-                    failure = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                    let message = (error as? LocalizedError)?.errorDescription
+                        ?? error.localizedDescription
+                    outcome = (false, message)
                 }
             }
 
-            await MainActor.run {
-                guard let self else { return }
-                defer {
-                    self.persist()
-                    self.scheduleNext()
-                }
-                // 用户主动暂停/删除触发的取消不算失败
-                if wasCancelled || task.state == .paused { return }
-
-                if let failure {
-                    task.state = .failed
-                    task.errorMessage = failure
-                    task.speedBytesPerSec = 0
-                } else if task.state == .running {
-                    // start() 正常返回 = 全部分片完成
-                    task.state = .completed
-                    task.downloadedBytes = task.totalBytes
-                    task.speedBytesPerSec = 0
-                }
+            guard let self else { return }
+            // 用户主动暂停/删除触发的取消不算失败
+            if outcome.cancelled || task.state == .paused {
+                self.persist()
+                self.scheduleNext()
+                return
             }
+
+            if let message = outcome.failure {
+                task.state = .failed
+                task.errorMessage = message
+                task.speedBytesPerSec = 0
+            } else if task.state == .running {
+                // start() 正常返回 = 全部分片完成
+                task.state = .completed
+                task.downloadedBytes = task.totalBytes
+                task.speedBytesPerSec = 0
+            }
+            self.persist()
+            self.scheduleNext()
         }
     }
 

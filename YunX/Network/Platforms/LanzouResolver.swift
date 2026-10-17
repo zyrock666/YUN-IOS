@@ -1528,7 +1528,16 @@ final class ILanzouResolver: ShareResolving, DownloadHeadersProviding, @unchecke
 
         var outLength = 0
         // PKCS7 最多补满一整块，所以输出缓冲留 input + 一个块
-        var outData = Data(count: inputData.count + kCCBlockSizeAES128)
+        let outCapacity = inputData.count + kCCBlockSizeAES128
+        var outData = Data(count: outCapacity)
+
+        // ⚠️ 所有尺寸必须提前取成局部常量。
+        // 若在 `outData.withUnsafeMutableBytes { ... }` 闭包里再写 `outData.count`，
+        // 就是「写访问未结束又发起读访问」，Swift 的独占访问检查会直接报
+        // error: overlapping accesses to 'outData', but modification requires exclusive access。
+        let inputCount = inputData.count
+        let keyCount = keyData.count
+
         // 注意：Data.withUnsafeBytes 对空 Data 也给非 nil 的 baseAddress（长度 0 的哨兵），
         // 所以这里不需要为「空明文」写额外分支；CCCrypt 会只输出一个填充块。
         let status = outData.withUnsafeMutableBytes { outBytes -> Int32 in
@@ -1541,10 +1550,10 @@ final class ILanzouResolver: ShareResolving, DownloadHeadersProviding, @unchecke
                         CCOperation(kCCEncrypt),
                         CCAlgorithm(kCCAlgorithmAES),
                         CCOptions(kCCOptionECBMode),
-                        keyBase, keyData.count,
+                        keyBase, keyCount,
                         nil,
-                        inBase, inputData.count,
-                        outBase, outData.count,
+                        inBase, inputCount,
+                        outBase, outCapacity,
                         &outLength
                     )
                 }

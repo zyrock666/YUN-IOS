@@ -399,11 +399,8 @@ struct ResolveScreen: View {
                     platform: share.platform,
                     resolver: resolver
                 )
-                // enqueue 在 @MainActor 类上，跨 actor 调用必须 await
-                let task = await DownloadManager.shared.enqueue(link, headers: headers)
-                // task.fileName 也是 @MainActor 隔离的属性，读取同样要 await
-                let name = await task.fileName
-                toastMessage = "已加入下载队列：\(name)"
+                let task = DownloadManager.shared.enqueue(link, headers: headers)
+                toastMessage = "已加入下载队列：\(task.fileName)"
             } catch {
                 alertMessage = "取直链失败：\(Self.describe(error))"
             }
@@ -712,11 +709,8 @@ private struct DirectoryScreen: View {
                     platform: share.platform,
                     resolver: resolver
                 )
-                // enqueue 在 @MainActor 类上，跨 actor 调用必须 await
-                let task = await DownloadManager.shared.enqueue(link, headers: headers)
-                // task.fileName 同样是 @MainActor 隔离的属性，读取也要 await
-                let name = await task.fileName
-                onEnqueued("已加入下载队列：\(name)")
+                let task = DownloadManager.shared.enqueue(link, headers: headers)
+                onEnqueued("已加入下载队列：\(task.fileName)")
             } catch {
                 onError("取直链失败：\(ResolveScreen.describe(error))")
             }

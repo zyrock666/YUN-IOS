@@ -213,7 +213,7 @@ struct SettingsScreen: View {
     ///
     /// 用 KeyPath 是为了避免为每个设置手写一份 get/set；
     /// `store` 是 `@StateObject` 持有的 ObservableObject，赋值会触发 `objectWillChange`。
-    @MainActor
+    /// `SettingsStore` 已不标 `@MainActor`，这里无需隔离修饰。
     private func intBinding(_ keyPath: ReferenceWritableKeyPath<SettingsStore, Int>) -> Binding<Int> {
         Binding(
             get: { store[keyPath: keyPath] },
@@ -222,7 +222,6 @@ struct SettingsScreen: View {
     }
 
     /// 生成一个读写 `@Published` Bool 属性的 Binding。
-    @MainActor
     private func boolBinding(_ keyPath: ReferenceWritableKeyPath<SettingsStore, Bool>) -> Binding<Bool> {
         Binding(
             get: { store[keyPath: keyPath] },

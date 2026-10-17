@@ -42,9 +42,11 @@ enum DownloadState: String, Codable, Sendable {
 
 /// 单个下载任务。
 ///
-/// 标 `@MainActor` 是因为所有字段都被 SwiftUI 直接绑定显示；
-/// 后台的引擎只通过 `onProgress` 回调把数据推回主线程。
-@MainActor
+/// **不标 `@MainActor`**：`@Published` 属性的线程安全由 SwiftUI 的
+/// `@ObservedObject` 观察机制保证（它只在主线程被读取渲染），
+/// 而引擎回调统一用 `Task { @MainActor in ... }` 回主线程赋值。
+/// 标 `@MainActor` 反而会让 `@StateObject = DownloadTask(...)` 之类在
+/// 非隔离上下文里报错（这个项目在这个坑里来回修了三轮）。
 final class DownloadTask: ObservableObject, Identifiable {
     let id: UUID
     @Published var fileName: String
@@ -113,22 +115,18 @@ final class DownloadTask: ObservableObject, Identifiable {
 }
 
 /// 下载任务管理器（单例）。
-@MainActor
+///
+/// **不标 `@MainActor`**，理由与 `DownloadTask` 相同：本类所有公开方法都是
+/// 「用户点一下」触发的短操作（入队/暂停/恢复/删除），天然在主线程调用；
+/// 内部长耗时的分发交给 `Task` 与后台引擎。去掉类级隔离后，
+/// `@StateObject = DownloadManager.shared` 不再需要 `nonisolated(unsafe)`，
+/// `init` 也不再需要 `nonisolated` —— 整条「隔离死结」彻底消失。
 final class DownloadManager: ObservableObject {
 
     /// 单例。
     ///
-    /// 为什么 `shared` 和 `init()` 都要 `nonisolated`：
-    /// SwiftUI 的 `@StateObject private var x = DownloadManager.shared` 在**属性初始化器**
-    /// 里求值，那不是 main actor 上下文。若 `shared` 是 `@MainActor` 的 static，
-    /// 会报「main actor-isolated static property 'shared' can not be referenced from a non-isolated context」；
-    /// 而只给 `shared` 加 `nonisolated(unsafe)` 又会让它去调 `@MainActor` 的 `init()`，
-    /// 报「call to main actor-isolated initializer 'init()' in a synchronous nonisolated(unsafe) context」。
-    /// 所以两者必须同时 `nonisolated`。
-    ///
-    /// 安全性：`init()` 里只做纯数据加载（读 JSON 到属性），不碰 UI、不跨线程共享；
-    /// 实例创建完成后，所有可变状态的读写仍由类上的 @MainActor 隔离保护。
-    nonisolated(unsafe) static let shared = DownloadManager()
+    /// 单例。本类无 actor 隔离，直接 static let 即可。
+    static let shared = DownloadManager()
 
     @Published private(set) var tasks: [DownloadTask] = []
 
@@ -158,20 +156,17 @@ final class DownloadManager: ObservableObject {
     /// 同时进行（running）的任务上限。iOS 后台时间有限，串行队列更稳。
     private let maxConcurrentTasks = 2
 
-    /// `nonisolated` 的理由见 `shared` 的注释：它要被 nonisolated 的 static 属性调用。
-    ///
-    /// 这里**不做任何有隔离要求的工作**（不读文件、不建对象），只让属性默认值生效；
-    /// 真正的任务恢复由 `bootstrap()` 在 App 启动时于主 actor 上执行。
-    nonisolated private init() {}
+    private init() {
+        // 只做纯数据恢复，无 UI 副作用。
+        loadPersistedTasks()
+    }
 
     // MARK: - 启动
 
     /// 启动时恢复未完成任务。
     ///
-    /// 单独抽成方法而不是放在 `init()` 里，是因为 `init` 必须是 `nonisolated`
-    /// （SwiftUI 的 `@StateObject = .shared` 要求），而 `loadPersistedTasks()`
-    /// 要碰 `@MainActor` 的 `DownloadTask`。由 `YunXApp.init` 在主 actor 上调用即可。
     /// 幂等：重复调用只会重读一次本地 JSON。
+    /// 保留成独立方法（而不是并进 `init`）是为了给启动流程一个显式的恢复点。
     func bootstrap() {
         loadPersistedTasks()
     }
@@ -361,9 +356,8 @@ final class DownloadManager: ObservableObject {
     // MARK: - 持久化
 
     private func persist() {
-        // 同 loadPersistedTasks 的理由：Record.init(from:) 读的是 @MainActor 的
-        // DownloadTask，因此它自身也是 @MainActor；`map` 闭包不是主 actor 上下文，
-        // 必须改成显式循环（本方法已在 @MainActor 上）。
+        // 用显式循环而非 map：语义更直白，也避免在不同 Swift 版本下
+        // 因闭包捕获规则变化产生意外。
         var records: [TaskStore.Record] = []
         records.reserveCapacity(tasks.count)
         for task in tasks {
@@ -374,10 +368,7 @@ final class DownloadManager: ObservableObject {
 
     private func loadPersistedTasks() {
         let records = store.load()
-        // 不能用 `records.map { $0.toTask() }`：`map` 的闭包不是 @MainActor 上下文，
-        // 而 toTask() 是 @MainActor 方法（它要构造 @MainActor 的 DownloadTask），
-        // 会报「call to main actor-isolated instance method in a synchronous nonisolated context」。
-        // 改成显式循环，本方法本身已在 @MainActor 上，循环体内的调用是合法的。
+        // 显式循环，理由同上。
         var loaded: [DownloadTask] = []
         loaded.reserveCapacity(records.count)
         for record in records {
